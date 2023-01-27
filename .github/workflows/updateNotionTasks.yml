@@ -21,9 +21,9 @@ jobs:
        uses: actions/setup-node@v3
        with:
           node-version: lts/*          
-
+     
      - name: Run action
-       uses: Guganana/SharedWorkflows/update-notion-task@main
+       uses: ./update-notion-task
        with:
         context: ${{ inputs.context }}
         notionToken: ${{ secrets.NOTION_KEY }}
