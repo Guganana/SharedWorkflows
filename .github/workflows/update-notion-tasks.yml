@@ -1,0 +1,29 @@
+name: Update notion tasks
+on:
+  workflow_call:
+    inputs:
+      context:
+        required: true
+        type: string
+    secrets:
+      NOTION_KEY:
+        required: true
+        
+jobs:
+  update-notion-tasks:
+    name: Update notion tasks to done
+    runs-on: ubuntu-latest
+    steps:
+     - name: Checkout
+       uses: actions/checkout@v3
+
+     - name: Setup Node
+       uses: actions/setup-node@v3
+       with:
+          node-version: lts/*          
+
+     - name: Run action
+       uses: Guganana/SharedWorkflows/update-notion-task
+       with:
+        context: ${{ inputs.context }}
+        notionToken: ${{ secrets.NOTION_KEY }}
