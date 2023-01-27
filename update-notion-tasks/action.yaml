@@ -9,10 +9,6 @@ inputs:
     type: string
     
 runs:
-  using: "composite"
-  steps:
+  using: node16
+  main: "index.js"
   
-  - uses: actions/checkout@v3
-  
-  - using: node16
-    main: "index.js"
