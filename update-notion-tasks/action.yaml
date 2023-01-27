@@ -1,0 +1,13 @@
+name: "Update notion tasks"
+description: "Automatically update notions tasks"
+inputs:
+  context:
+    required: true
+    type: string
+  notionToken:
+    required: true
+    type: string
+    
+runs:
+  using: node16
+  main: "index.js"
