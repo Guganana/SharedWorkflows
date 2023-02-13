@@ -1,0 +1,27 @@
+name: Deployer
+on:
+  workflow_call:
+    inputs:
+      repository:
+        required: true
+        type: string
+    secrets:
+      REPO_ACCESS_TOKEN:
+        required: true
+      UNREALCODEBUILDER_ENGINE_ENDPOINT:
+        required: true
+      GUGANANA_BUILD_KEY:
+        required: true
+      BACKBLAZE_KEY:
+        required: true
+      BACKBLAZE_APPLICATION_KEY:
+        required: true
+
+jobs:
+  route:
+    uses: guganana/PrivateWorkflows/.github/workflows/Deployer.yml@main
+    with:
+      repository: ${{ inputs.repository }}
+    secrets: inherit
+    
+    
