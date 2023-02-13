@@ -5,6 +5,12 @@ on:
       repository:
         required: true
         type: string
+      parentBucket:
+        required: true
+        type: string
+      parentDir:
+        required: true
+        type: string
     secrets:
       REPO_ACCESS_TOKEN:
         required: true
@@ -18,10 +24,72 @@ on:
         required: true
 
 jobs:
-  route:
-    uses: guganana/PrivateWorkflows/.github/workflows/Deployer.yml@main
+  prepareProject:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: ${{ secrets.repository }}
+          submodules: recursive
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          path: ./
+      
+      - name: Upload source code artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: "SourceCode"
+          path: ./
+          retention-days: 1
+          
+  build:
+    needs: prepareProject
+    uses: guganana/UnrealCodeBuilder/.github/workflows/CompilePlugin.yml@main
     with:
-      repository: ${{ inputs.repository }}
-    secrets: inherit
+      projectArtifactName: "SourceCode"
+      prepareForMarketplace: true
+    secrets:
+      UNREALCODEBUILDER_ENGINE_ENDPOINT: ${{ secrets.UNREALCODEBUILDER_ENGINE_ENDPOINT }}
+      GUGANANA_BUILD_KEY : ${{ secrets.GUGANANA_BUILD_KEY  }}
     
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    
+      - uses: actions/checkout@v3
+        with:
+          path: ./Source
+          
+      - uses: actions/checkout@v3
+        with:
+          repository: guganana/GugananaBuild
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          path: ./GugananaBuild
+      
+      - uses: guganana/UnrealCodeBuilder/run-command@main
+        with:
+          projectPath: ./Source
+          command: "parse-metadata"
+          
+      - uses: actions/download-artifact@v3
+        with:
+          path: ./artifacts
+      
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+        
+      - shell: pwsh
+        run: |          
+          pip install b2
+          $artifactsDirs = Get-ChildItem -Path ./artifacts
+          
+          cd ./GugananaBuild
+          Foreach($artifact in $artifactsDirs)
+          {
+            $ZipName = "../$($artifact.name).zip"
+            echo $ZipName
+            Compress-Archive -Path "$($artifact.fullname)/*" -DestinationPath $ZipName -Force
+            ./uploadToBackblaze.ps1 $ZipName ${{ inputs.parentBucket }} ${{ inputs.parentDir }} ${{ secrets.BACKBLAZE_APPLICATION_KEY }} ${{ secrets.BACKBLAZE_KEY }}
+          }
     
